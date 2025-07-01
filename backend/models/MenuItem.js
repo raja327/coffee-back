@@ -11,16 +11,29 @@ const menuItemSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    imageUrl: String,
+    image: {
+      url: { type: String },
+      public_id: { type: String },
+    },
     category: {
       type: String,
-      enum: ["coffee", "tea", "cold", "snacks"],
+      enum: ["coffee", "tea", "bakery", "snacks"],
       required: true,
     },
     available: {
       type: Boolean,
       default: true,
     },
+
+    // ✅ Add these fields to support review summaries
+    // rating: {
+    //   type: Number,
+    //   default: 0,
+    // },
+    // numReviews: {
+    //   type: Number,
+    //   default: 0,
+    // },
   },
   {
     timestamps: true,

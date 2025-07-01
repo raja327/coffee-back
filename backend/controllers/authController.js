@@ -1,6 +1,6 @@
-import User from "../models/User";
+import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import { validationResult } from "express-validator";
+import bcrypt from "bcryptjs";
 
 // generate token
 const generateToken = (user) => {
@@ -15,14 +15,8 @@ const generateToken = (user) => {
     }
   );
 };
-
 // @desc Register new user
 export const registerUser = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(400);
-    throw new Error(errors.array()[0].msg);
-  }
   const { name, email, password } = req.body;
   try {
     const existing = await User.findOne({ email });
@@ -33,6 +27,7 @@ export const registerUser = async (req, res) => {
     const token = generateToken(user);
 
     res.status(201).json({
+      message: "User created successfully",
       _id: user._id,
       name: user.name,
       email: user.email,
@@ -64,5 +59,58 @@ export const loginUser = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+export const getProfile = async (req, res) => {
+  if (!req.user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json({
+    _id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+  });
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name: req.body.name, email: req.body.email },
+      { new: true, runValidators: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Error" + error.message });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.log(error);
   }
 };

@@ -1,32 +1,37 @@
-import MenuItem from "../models/MenuItem";
+import cloudinary from "../config/cloudinary.js";
+import MenuItem from "../models/MenuItem.js";
 
 // desc get all menu Items
 
-export const getMenuItems = async (req, res) => {
+export const getAllMenuItems = async (req, res) => {
   try {
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
+    // const items = await MenuItem.find();
+    // res.status(200).json(items);
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit) || 10;
+    // console.log(page);
+    const skip = (page - 1) * limit;
+    //fetch total count
+    const totalMenuItems = await MenuItem.countDocuments();
+    // fetch paginated items
+    const items = await MenuItem.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
-    const search = req.query.search || "";
-    const category = req.query.category || "";
-    const sortBy = req.query.sortBy || "createdAt";
-    const order = req.query.order === "asc" ? 1 : -1;
-
-    const query = {
-      ...(search && { name: { $regex: search, $options: "i" } }),
-      ...(category && category),
-    };
-
-    const count = await MenuItem.countDocuments(query);
-    const items = await MenuItem.find(query)
-      .sort({ [sortBy]: order })
-      .skip(limit * (page - 1))
-      .limit(limit);
-
-    res.json({ items, page, pages: Math.ceil(count / limit), total: count });
+    res.status(200).json({
+      items,
+      pagination: {
+        total: totalMenuItems,
+        page,
+        pages: Math.ceil(totalMenuItems / limit),
+        limit,
+      },
+    });
   } catch (error) {
-    res.status(500);
-    throw new Error("Failed to fetch menu items");
+    res
+      .status(500)
+      .json({ message: "Failed to fetch items", error: error.message });
   }
 };
 
@@ -48,40 +53,61 @@ export const getMenuItem = async (req, res) => {
 // desc create a menu item (admin)
 export const createMenuItem = async (req, res) => {
   try {
-    const { name, description, price, imageUrl, category } = req.body;
+    const { name, description, price, category } = req.body;
+
+    // Cloudinary image URL is in req.file.path
+    const image = req.file
+      ? { url: req.file.path, public_id: req.file.filename }
+      : { url: "", public_id: "" };
 
     const newItem = new MenuItem({
       name,
       description,
       price,
-      imageUrl,
+      image,
       category,
     });
 
-    const saveItem = await newItem.save();
-    res.status(201).json(saveItem);
+    const savedItem = await newItem.save();
+
+    res.status(201).json(savedItem);
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Failed to create item ", error: error.message });
+      .json({ message: "Failed to create item", error: error.message });
   }
 };
 
 // @desc    Update a menu item
 export const updateMenuItem = async (req, res) => {
   try {
-    const item = await MenuItem.findById(req.params.id);
-    if (!item) {
-      return res.status(404).json({ message: "Item not found" });
-    }
+    const { id } = req.params;
+    console.log(req.file);
+    // find existing branch
+    const menu = await MenuItem.findById(id);
+    if (!menu) return res.status(404).json({ message: "Menu is not found" });
 
-    Object.assign(item, req.body);
-    const updatedItem = await item.save();
-    res.status(200).json(updatedItem);
+    // Delete old image from cloudinary
+    if (menu.image?.public_id) {
+      await cloudinary.uploader.destroy(menu.image.public_id);
+    }
+    // prepare update payload
+    const updatedData = {
+      ...req.body,
+    };
+    if (req.file) {
+      updatedData.image = {
+        url: req.file.path,
+        public_id: req.file.filename,
+      };
+    }
+    const updatedMenu = await MenuItem.findByIdAndUpdate(id, updatedData, {
+      new: true,
+    });
+    res.status(200).json(updatedMenu);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to update item", error: error.message });
+    console.error("Error updating menu", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 

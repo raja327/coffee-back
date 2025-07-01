@@ -1,13 +1,9 @@
 import express from "express";
-import { protect, adminOnly } from "../middleware/authMiddleware";
-import router from "./authRoutes";
+import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import { getAllUsers } from "../controllers/userController.js";
+const router = express.Router();
 
-router.get("/profile", protect, (req, res) => {
-  res.json(req.user);
-});
-
-router.get("/admin", protect, adminOnly, (req, res) => {
-  res.send("welcome Admin");
-});
+// Admin:Get all users
+router.get("/", protect, adminOnly, getAllUsers);
 
 export default router;

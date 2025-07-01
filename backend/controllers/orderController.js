@@ -1,39 +1,34 @@
-import Order from "../models/Order";
+import Order from "../models/Order.js";
 import MenuItem from "../models/MenuItem.js";
 // Place an order
 
 export const placeOrder = async (req, res) => {
+  if (req.user === "admin")
+    return res
+      .status(401)
+      .json({ message: "Admin are not allowed to place order" });
+  const { items, total, phone, shippingAddress } = req.body;
+
+  if (!items || items.length === 0) {
+    return res.status(400).json({ message: "No items in order" });
+  }
+
   try {
-    const { items, branch } = req.body;
-    const userId = req.user._id;
-
-    const populatedItems = await Promise.all(
-      items.map(async (item) => {
-        const menuItem = await Menu.findById(item.menuItem);
-        return {
-          menuItem: menuItem._id,
-          quality: item.quality,
-          price: menuItem.price,
-        };
-      })
-    );
-    const totalAmount = populatedItems.reduce(
-      (acc, item) => acc + item.price * item.quality,
-      0
-    );
-
-    const order = await Order.create({
-      user: userId,
-      items: populatedItems.map(({ menuItem, quality }) => ({
-        menuItem,
-        quality,
-      })),
-      branch,
-      totalAmount,
+    const order = new Order({
+      user: req.user._id,
+      items,
+      total,
+      phone,
+      shippingAddress,
     });
-    res.status(201).json(order);
+
+    const savedOrder = await order.save();
+    res.status(201).json(savedOrder);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Order Error:", error); // Add this
+    res
+      .status(500)
+      .json({ message: "Failed to place order", error: error.message });
   }
 };
 
@@ -42,13 +37,24 @@ export const placeOrder = async (req, res) => {
 export const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }).populate(
-      "items.menuItem branch"
+      "items.menuItem"
     );
     res.json(orders);
   } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get orders" });
+  }
+};
+export const deleteMyOrder = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    console.log(order);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json({ message: "Order deleted successfully" });
+  } catch (error) {
     res
       .status(500)
-      .json({ message: "Failed to fetch orders", error: error.message });
+      .json({ message: "Failed to delete order", error: error.message });
   }
 };
 
@@ -56,7 +62,9 @@ export const getMyOrders = async (req, res) => {
 
 export const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate("user items.menuItem branch");
+    const orders = await Order.find()
+      .populate("user", "name email")
+      .populate("items.menuItem", "name price image");
     res.json(orders);
   } catch (error) {
     res

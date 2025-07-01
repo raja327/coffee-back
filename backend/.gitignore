@@ -1,0 +1,34 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Coverage and build files
+coverage/
+*.lcov
+build/
+dist/
+
+# Cache files
+.npm/
+.eslintcache
+
+# Next.js build (if using Next.js)
+.next
+
+# TypeScript cache (if using TypeScript)
+*.tsbuildinfo
+
+# Dependency lock files
+.yarn-integrity
+
+# Temporary files
+.DS_Store
+Thumbs.db

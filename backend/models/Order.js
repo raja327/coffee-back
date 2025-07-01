@@ -14,31 +14,30 @@ const orderSchema = new mongoose.Schema(
           ref: "MenuItem",
           required: true,
         },
-        quality: {
+        quantity: {
           type: Number,
           required: true,
           min: 1,
         },
       },
     ],
-    branch: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Branch",
+
+    total: {
+      type: Number,
       required: true,
     },
-    totalAmount: {
-      type: Number,
+    phone: {
+      type: String,
+      required: true,
+    },
+    shippingAddress: {
+      type: String,
       required: true,
     },
     status: {
       type: String,
       enum: ["pending", "preparing", "completed", "cancelled"],
       default: "pending",
-    },
-    paymentStatus: {
-      type: String,
-      enum: ["paid", "unpaid"],
-      default: "unpaid",
     },
   },
   {

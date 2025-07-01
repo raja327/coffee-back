@@ -10,14 +10,20 @@ const branchSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    phone: String,
+    phone: {
+      type: String,
+      required: true,
+    },
     openHours: {
       type: String,
       default: "8:00 Am - 10:00 pm",
     },
-    isActive: {
-      type: Boolean,
-      default: true,
+    image: {
+      url: {
+        type: String,
+        required: true,
+      },
+      public_id: { type: String },
     },
   },
   { timestamps: true }
