@@ -1,5 +1,5 @@
 {
-  "name": "coffee-front-typescript",
+  "name": "coffee-back",
   "version": "0.1.0",
   "type": "module",
   "main": "backend/server.js",
@@ -7,12 +7,10 @@
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
