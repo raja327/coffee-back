@@ -24,7 +24,12 @@ connectDB();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://coffee-back-w7ki.onrender.com/api",
+    credentials: true,
+  })
+);
 
 // apply security middleware
 // app.use(helmet());
