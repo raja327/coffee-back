@@ -26,7 +26,7 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://coffee-back-w7ki.onrender.com",
+    origin: "https://coffee-front-sable.vercel.app",
     credentials: true,
   })
 );
